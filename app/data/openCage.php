@@ -1,7 +1,7 @@
 <?php
 
 function getCountryCoords($countryName) {
-    $openCageUrl = 'https://api.opencagedata.com/geocode/v1/json?key=d3916e739ef84132ac13aac0ee71da81&q='.urlencode($countryName).'';
+    $openCageUrl = 'https://api.opencagedata.com/geocode/v1/json?key=######&q='.urlencode($countryName).'';
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
@@ -14,7 +14,7 @@ function getCountryCoords($countryName) {
 
 
 function getCountryName($homeCoords) {
-    $openCageUrl = 'https://api.opencagedata.com/geocode/v1/json?key=d3916e739ef84132ac13aac0ee71da81&q='.urlencode($homeCoords).'';
+    $openCageUrl = 'https://api.opencagedata.com/geocode/v1/json?key=#######&q='.urlencode($homeCoords).'';
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
