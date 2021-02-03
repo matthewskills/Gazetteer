@@ -1,7 +1,7 @@
 <?php 
 
 function countryInfo($isoa2) {
-    $url = 'http://api.geonames.org/countryInfoJSON?formatted=true&lang=en&country='.$isoa2.'&username=mattskills&style=full';
+    $url = 'http://api.geonames.org/countryInfoJSON?formatted=true&lang=en&country='.$isoa2.'&username=#####&style=full';
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -13,7 +13,7 @@ function countryInfo($isoa2) {
 }
 
 function wikiSearch($countryName) {
-    $url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q='.urlencode($countryName).'&maxRows=10&username=mattskills&style=full';
+    $url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q='.urlencode($countryName).'&maxRows=10&username=####&style=full';
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
