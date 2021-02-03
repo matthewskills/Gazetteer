@@ -14,7 +14,7 @@ function getWeather($countryName) {
         CURLOPT_CUSTOMREQUEST => "GET",
         CURLOPT_HTTPHEADER => [
             "x-rapidapi-host: community-open-weather-map.p.rapidapi.com",
-            "x-rapidapi-key: f45befac81msh31b0018b778337bp1f3e3djsn5e25c3150192"
+            "x-rapidapi-key: ############################################"
         ],
     ]);
     
