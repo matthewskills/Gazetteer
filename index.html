@@ -13,7 +13,7 @@
     </head>
     <body>
         <header>
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container-fluid">
                     <a class="navbar-brand" href="#">
                         <embed src="img/logo.svg"  width="30" height="34" class="d-inline-block align-top" />
@@ -21,12 +21,9 @@
                     </a>
                     <form class="d-flex">
                         <div class="input-group">
-                        <input class="form-control" list="datalistCountries" id="countriesDataList" placeholder="Type to search...">
-                        <datalist id="datalistCountries">
-                        </datalist>
-                        <button type="button" id="changeCountry" class="btn btn-primary">
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-                        </button>
+                        
+                        <select id="countriesDataList">
+                        </select>
                     </div>
                       </form>
                 </div>
@@ -36,12 +33,14 @@
 
         </header>
         <section id="map">
-            <div class="spinner spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+            <div class="spinnerContainer">
+                <div class="spinner spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                </div>
         </section>
 
-        <div class="modal fade" id="countryInfoBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="countryInfoBoxLabel" aria-hidden="true">
+        <div class="modal fade" id="countryInfoBox" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="countryInfoBoxLabel" aria-hidden="true" data-backdrop="false">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" >
                 <div class="modal-content">
                     <div class="modal-header">
@@ -56,7 +55,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="currencyInfoBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="currencyInfoBoxLabel" aria-hidden="true">
+        <div class="modal fade" id="currencyInfoBox" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="currencyInfoBoxLabel" aria-hidden="true" >
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" >
                 <div class="modal-content">
                     <div class="modal-header">
@@ -84,7 +83,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="newsInfoBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="newsInfoBoxLabel" aria-hidden="true">
+        <div class="modal fade" id="newsInfoBox" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="newsInfoBoxLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" >
                 <div class="modal-content">
                     <div class="modal-header">

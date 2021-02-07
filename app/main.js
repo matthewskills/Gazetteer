@@ -33,20 +33,63 @@ const touristsIcon = L.icon({
     iconSize:     [34, 34], // size of the icon
 });
 
+var baseMaps = {
+    "Light Mode": Stadia_Outdoors,
+    "Dark Mode": Stadia_AlidadeSmoothDark
+};
+
+let coords,countryBorders,countryList
+
 async function setMap(ctry) {
 
  await   $.ajax({
         url: 'https://mattskills.co.uk/projects/gazetteer/app/main.php',
         type: 'POST',
         dataType: 'json',
-        data: { countryName: ctry },
+        data: {requestType: 'initial', code: ctry },
         success: result => {
             console.log(`The map was set with the following data:`)
             console.log(result);
 
-            const homeCountryName = result['homeCountryName'];
-            const coords = result['coords'];
-            const wiki = result['wiki'];
+            coords = result['coords'];
+            countryBorders = result['countryBorders'];
+            countryList = result['countryList'];
+
+            mymap = L.map('map', {
+                layers: [Stadia_AlidadeSmoothDark, Stadia_Outdoors]
+            })
+
+            mymap.setView([coords['lat'], coords['lng']],10);
+
+           
+
+            L.geoJSON(countryBorders, {
+                style: {color: "#ff0047", fillColor: "#0078ff"} 
+            }).addTo(mymap);
+
+            bounds =  L.geoJSON(countryBorders).getBounds();
+            mymap.fitBounds(bounds, {padding: [50,50]})
+            
+             $('#countriesDataList').append(`<option selected="selected">${countryBorders['properties']['name']}</option>`)
+            countryList.forEach( (country) => {
+                let opt = document.createElement("option");
+                opt.value = country['code'];
+                opt.text = country['name'];
+                document.getElementById("countriesDataList").appendChild(opt,null);
+            });
+           
+            
+              
+        }
+    }).then ( async function() {
+     await   $.ajax({
+            url: 'https://mattskills.co.uk/projects/gazetteer/app/main.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { code: ctry },
+            success: result => {
+                console.log(result)
+                const wiki = result['wiki'];
             let wikiSummary
             try {
             const wikiLink = `( <a href="https://${wiki['wikiUrl']}" target="_blank">Read More</a> )`;
@@ -55,8 +98,6 @@ async function setMap(ctry) {
                 wikiSummary = "<small>Sorry, Couldn't find data from Wikipedia</small>";
             }
 
-            const countryBorders = result['countryBorders'];
-            const countryList = result['countryList'];
             const countryInfo = result['countryInfo'][0];
             const cities = result['cities'];
             const exchangeRates = result['exchangeRates'];
@@ -67,34 +108,10 @@ async function setMap(ctry) {
             const touristSpots = result['touristSpots']['features'];
             const newsProviders = result['newsProviders']['sources'];
 
-            let sunset
-            try {
-            sunset = new Date(weather['sys']['sunset']);
-            } catch(err) {
-               console.log(`Couldn't make the sunset time a date, probably because there was no result: ${err}`)
-            }
-
-
-
-            mymap = L.map('map', {
-                layers: [Stadia_AlidadeSmoothDark, Stadia_Outdoors]
-            })
-
-            mymap.setView([coords['lat'], coords['lng']],10);
-
-            var baseMaps = {
-                "Light Mode": Stadia_Outdoors,
-                "Dark Mode": Stadia_AlidadeSmoothDark
-            };
-
-
-
-            L.geoJSON(countryBorders, {
-                style: {color: "#ff0047", fillColor: "#0078ff"} 
-            }).addTo(mymap);
-
-            bounds =  L.geoJSON(countryBorders).getBounds();
-            mymap.fitBounds(bounds, {padding: [50,50]})
+             
+            let windSpeed = weather['current']['wind_mph']
+            let windDesc
+            
 
             L.easyButton( '<svg viewBox="0 0 31 30" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>', function(){
                 countryMarkerOnClick();
@@ -102,7 +119,7 @@ async function setMap(ctry) {
 
             
             function countryMarkerOnClick() {
-            $("#countryInfoBoxLabel").html(`<img src="https://www.countryflags.io/${countryInfo['countryCode']}/flat/64.png"> ${ctry} - ${countryBorders['properties']['iso_a2']} `)
+            $("#countryInfoBoxLabel").html(`<img src="https://www.countryflags.io/${countryInfo['countryCode']}/flat/64.png"> ${countryBorders['properties']['name']} - ${ctry}  `)
             $("#countryInfoBoxBody").html(`
             <p class="modalList" >
             <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -152,24 +169,44 @@ async function setMap(ctry) {
 
             
             L.easyButton( '<svg viewBox="0 0 31 30" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>', function(){
-                $("#countryInfoBoxLabel").html(`Weather (${ctry})`);
+                $("#countryInfoBoxLabel").html(`Weather in ${weather['location']['name']}`);
                 
-            if (weather['weather']) {
+
+            if (weather['current']) {
+
+                const day1 = new Date(weather['forecast']['forecastday'][1]['date']);
+                const day2 = new Date(weather['forecast']['forecastday'][2]['date']);
+
                 $("#countryInfoBoxBody").html(`
-               <p class="modalList"> <img src="http://openweathermap.org/img/wn/${weather['weather'][0]['icon']}.png" /> ${weather['weather'][0]['description']}</p>
-               <p class="modalList">
-               <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
-               <strong>${weather['main']['temp']}&deg;c</strong> , Feels Like ${weather['main']['feels_like']}&deg;c<br>
-               <small class="text-muted">High of: ${weather['main']['temp_max']}&deg;c , Low of: ${weather['main']['temp_min']}&deg;c</small>
-               </p>
-               <p class="modalList">
-               <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
-               <strong>${weather['wind']['speed']}mph</strong> , Direction: ${weather['wind']['deg']}&deg;
-               </p>
-               <p class="modalList">
-               <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M17 18a5 5 0 0 0-10 0"></path><line x1="12" y1="9" x2="12" y2="2"></line><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"></line><line x1="1" y1="18" x2="3" y2="18"></line><line x1="21" y1="18" x2="23" y2="18"></line><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"></line><line x1="23" y1="22" x2="1" y2="22"></line><polyline points="16 5 12 9 8 5"></polyline></svg>
-                <strong>${sunset.toTimeString()}</strong>
-               </p>
+               
+                <div class="row">
+                    <h5>Today</h5>
+                    <div class="col-sm weatherTemp">
+                    <img src="${weather['current']['condition']['icon']}" alt="${weather['current']['condition']['text']}" height="64px" />
+                    <p><strong>${weather['forecast']['forecastday'][0]['day']['maxtemp_c']}&deg;c</strong></p>
+                    <p>${weather['forecast']['forecastday'][0]['day']['mintemp_c']}&deg;c</p>
+                    </div>
+                    <div class="col-sm">
+                    ${weather['current']['condition']['text']} and ${weather['current']['condition']['wind_desc']}.
+                    </div>
+                </div>
+
+                <div class="row weatherForecastRow">
+                    <div class="col-sm weatherForecastCol">
+                    <h5>${day1.toDateString()}</h5>
+                    <img src="${weather['forecast']['forecastday'][1]['day']['condition']['icon']}" alt="${weather['current']['condition']['text']}" height="64px" />
+                    <p><strong>${weather['forecast']['forecastday'][1]['day']['maxtemp_c']}&deg;c</strong></p>
+                    <p>${weather['forecast']['forecastday'][1]['day']['mintemp_c']}&deg;c</p>
+                    </div>
+                    <div class="col-sm weatherForecastCol" style="border-right:0px;">
+                    <h5>${day2.toDateString()}</h5>
+                    <img src="${weather['forecast']['forecastday'][2]['day']['condition']['icon']}" alt="${weather['current']['condition']['text']}" height="64px" />
+                    <p><strong>${weather['forecast']['forecastday'][2]['day']['maxtemp_c']}&deg;c</strong></p>
+                    <p>${weather['forecast']['forecastday'][2]['day']['mintemp_c']}&deg;c</p>
+                    </div>
+                </div>
+            
+                
                 `);
             } else {
                 $("#countryInfoBoxBody").html(`<p>Sorry, we don't know what the weather is like in ${ctry}.</p>`);
@@ -200,24 +237,14 @@ async function setMap(ctry) {
               }).addTo(mymap);
              
 
-              L.marker([coords['lat'], coords['lng']]).addTo(mymap).on('click', countryMarkerOnClick)
-
               const cityMarkers = L.markerClusterGroup();
               if(cities[0]['lat']) {
             cities.forEach( (item,index) => {
-                cityMarkers.addLayer(L.marker([cities[index]['lat'], cities[index]['lng']], {icon: cityIcon}).on('click', () => {
-                    $("#countryInfoBoxLabel").html(`${cities[index]['city']} - ${cities[index]['iso2']}  `);
-                    $("#countryInfoBoxBody").html(`
-                    <p class="modalList" >
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    <strong>Latitude:</strong> ${cities[index]['lat']} , <strong>Longitude:</strong> ${cities[index]['lng']}
-                    </p>
-                    <p class="modalList" >
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    <strong>Population: </strong> ${cities[index]['population']}
-                    </p>
-                    `)
-                    $('#countryInfoBox').modal('show');
+                cityMarkers.addLayer(L.marker([cities[index]['lat'], cities[index]['lng']], {icon: cityIcon}).bindTooltip(`
+                <strong>${cities[index]['city']} - ${cities[index]['iso2']} </strong>
+                `, {
+                    className: 'tooltips',
+                    direction: 'top'
                 }))
             })
         } else {
@@ -228,11 +255,11 @@ async function setMap(ctry) {
             const battleMarkers = L.markerClusterGroup();
             if(poi) {
             poi.forEach( (item,index) => { 
-                battleMarkers.addLayer(L.marker([poi[index]['geometry']['coordinates'][1], poi[index]['geometry']['coordinates'][0]],{icon: battleIcon}).on('click', () => {
-                    $("#countryInfoBoxLabel").html(`${poi[index]['properties']['name']}`);
-                    $("#countryInfoBoxBody").html(``);
-                    getDescription(poi[index]['properties']['wikidata']);
-                    $('#countryInfoBox').modal('show');
+                battleMarkers.addLayer(L.marker([poi[index]['geometry']['coordinates'][1], poi[index]['geometry']['coordinates'][0]],{icon: battleIcon}).bindTooltip(`
+                <strong>${poi[index]['properties']['name']}</strong>
+                `, {
+                    className: 'tooltips',
+                    direction: 'top'
                 }))
 
             }) }
@@ -244,11 +271,11 @@ async function setMap(ctry) {
 
             if(railStations) {
             railStations.forEach( (item,index) => { 
-                railwayMarkers.addLayer(L.marker([railStations[index]['geometry']['coordinates'][1], railStations[index]['geometry']['coordinates'][0]],{icon: railIcon}).on('click', () => {
-                    $("#countryInfoBoxLabel").html(`${railStations[index]['properties']['name']} `);
-                    $("#countryInfoBoxBody").html(``);
-                    getDescription(railStations[index]['properties']['wikidata']);
-                    $('#countryInfoBox').modal('show');
+                railwayMarkers.addLayer(L.marker([railStations[index]['geometry']['coordinates'][1], railStations[index]['geometry']['coordinates'][0]],{icon: railIcon}).bindTooltip(`
+                <strong>${railStations[index]['properties']['name']}</strong>
+                `, {
+                    className: 'tooltips',
+                    direction: 'top'
                 }))
 
             }) }
@@ -260,11 +287,11 @@ async function setMap(ctry) {
 
             if(hotels) {
             hotels.forEach( (item,index) => { 
-                hotelsMarkers.addLayer(L.marker([hotels[index]['geometry']['coordinates'][1], hotels[index]['geometry']['coordinates'][0]],{icon: hotelsIcon}).on('click', () => {
-                    $("#countryInfoBoxLabel").html(`${hotels[index]['properties']['name']}`);
-                    $("#countryInfoBoxBody").html(``);
-                    getDescription(hotels[index]['properties']['wikidata']);
-                    $('#countryInfoBox').modal('show');
+                hotelsMarkers.addLayer(L.marker([hotels[index]['geometry']['coordinates'][1], hotels[index]['geometry']['coordinates'][0]],{icon: hotelsIcon}).bindTooltip(`
+                <strong>${hotels[index]['properties']['name']}</strong>
+                `, {
+                    className: 'tooltips',
+                    direction: 'top'
                 }))
 
             }) }
@@ -276,11 +303,11 @@ async function setMap(ctry) {
 
             if(touristSpots) {
             touristSpots.forEach( (item,index) => { 
-                touristSpotsMarkers.addLayer(L.marker([touristSpots[index]['geometry']['coordinates'][1], touristSpots[index]['geometry']['coordinates'][0]],{icon: touristsIcon}).on('click', () => {
-                    $("#countryInfoBoxLabel").html(`${touristSpots[index]['properties']['name']} `);
-                    $("#countryInfoBoxBody").html(``);
-                    getDescription(touristSpots[index]['properties']['wikidata']);
-                    $('#countryInfoBox').modal('show');
+                touristSpotsMarkers.addLayer(L.marker([touristSpots[index]['geometry']['coordinates'][1], touristSpots[index]['geometry']['coordinates'][0]],{icon: touristsIcon}).bindTooltip(`
+                <strong>${touristSpots[index]['properties']['name']}</strong>
+                `, {
+                    className: 'tooltips',
+                    direction: 'top'
                 }))
 
             }) }
@@ -288,6 +315,12 @@ async function setMap(ctry) {
                 console.log(`Couldn't find any tourist spots  in ${ctry}`)
             }
 
+            touristSpotsMarkers.addTo(mymap);
+            cityMarkers.addTo(mymap);
+            battleMarkers.addTo(mymap);
+            railwayMarkers.addTo(mymap);
+            hotelsMarkers.addTo(mymap);
+            touristSpotsMarkers.addTo(mymap);
 
             var overlayMaps = {
                 "Cities": cityMarkers,
@@ -297,19 +330,12 @@ async function setMap(ctry) {
                 "Tourist Attractions": touristSpotsMarkers
             };
             L.control.layers(baseMaps,overlayMaps).addTo(mymap);
-            
-
-            countryList.forEach( (country) => {
-                let opt = document.createElement("option");
-                opt.value = country;
-                opt.text = country;
-                document.getElementById("datalistCountries").appendChild(opt,null);
-            });
-            
-              
-        }
+            }
+        })
+        
     }).then (() => {
-        $('.spinner').hide();
+        $('.spinnerContainer').fadeOut('slow');
+        
     })
 }
 
@@ -338,20 +364,22 @@ function getDescription(wikidata) {
 if('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition((position) => {
         console.log(`Visitor let us use their location, using it to set the map...`)
+        console.log(position.coords.latitude+' '+position.coords.longitude)
         $.ajax({
             url: 'https://mattskills.co.uk/projects/gazetteer/app/main.php',
             type: 'POST',
             dataType: 'json',
             data: { homeCoords: position.coords.latitude+' '+position.coords.longitude},
                 success: result => {
-                    setMap(result['homeCountryName']);
-                   
+                    console.log(result)
+                    setMap(result['homeCountryData']['homeCountryCode']);
+                
                 }
             })
       });
 } else {
-    console.log(`Visitor didn't let us use their location, going to the bahamas...`)
-    setMap('Bahamas');
+    console.log(`Visitor didn't let us use their location, going to the United Kingdom`)
+    setMap('GB');
 }
 
 $(document).ready( () => {
@@ -364,12 +392,19 @@ $(document).ready( () => {
         console.log('Visitor has requested '+$('#countriesDataList').val()+', changing the map...');
         mymap.remove();
         setMap($('#countriesDataList').val());
-        $('.spinner').show();
+        $('.spinnerContainer').fadeIn('fast');
         }
     })  
 
-    $('#countriesDataList').on('click', () => {
-        $('#countriesDataList').val('');
+    $('#countriesDataList').on('change',  () => {
+        if ($('#countriesDataList').val() == '') {
+            console.log(`Visitor has requested to change the map but didn't select a location`);
+        } else {
+        console.log('Visitor has requested '+$('#countriesDataList').val()+', changing the map...');
+        mymap.remove();
+        setMap($('#countriesDataList').val());
+        $('.spinnerContainer').fadeIn('fast');
+        }
     })
 
 })
